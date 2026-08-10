@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js"
 import { generateToken } from "../lib/utils.js";
+import cloudinary from "../lib/cloudinary.js";
 
 
 
@@ -111,5 +112,28 @@ export const logout = (req, res) => {
 
 
 export const updateProfile = async (req,res) =>{
+    try{
+        const {profilePic} = req.body;
+        const userId = req.body._id;
 
+        if(!profilePic){
+            return res.status(400).json({message:"Profile picture is required"})
+        }
+        const uploadResponse = await cloudinary.uploader.upload(profilePic);
+        const updatedDB = await User.findOneAndUpdate(userId,{profilePic:uploadResponse.secure_url},{new:true});
+
+        return res.status(200).json(updatedDB)
+    }catch(error){
+        console.log("Error occured in update profile method " +error.message );
+        return res.status(500).json({message:error.message});
+    }
+}
+
+export const checkAuth =  (req,res) =>{
+    try{
+        return res.status(200).json(req.user);
+    }catch(error){
+        console.log("Error in checkAuth method "+error.message)
+        res.status(500).json({message:error.message})
+    }
 }
